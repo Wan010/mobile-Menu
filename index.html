@@ -1,881 +1,835 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoInvoice Pro - Advanced Crypto Invoice Generator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Invoice Genie — Invoice Generator</title>
 
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
+  <!-- Fonts & icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-        .hero-gradient {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a8a 100%);
-        }
-
-        .card-hover {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-primary {
-            background: #a855f7;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: #9333ea;
-            transform: scale(1.05);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .mobile-menu {
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .mobile-menu.active {
-                display: block;
-            }
-        }
-
-        .invoice-preview {
-            background: white;
-            border: 1px solid #e5e7eb;
-            min-height: 600px;
-        }
-
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            .invoice-preview, .invoice-preview * {
-                visibility: visible;
-            }
-            .invoice-preview {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
-        }
-
-        .tab-active {
-            border-bottom: 3px solid #a855f7;
-            color: #a855f7;
-        }
-
-        .crypto-badge {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: .8;
-            }
-        }
-
-        /* Theme Styles */
-        .theme-modern { background: white; }
-        .theme-dark { background: #1f2937; color: white; }
-        .theme-minimal { background: #fafafa; }
-        .theme-colorful { background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%); }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-    </style>
+  <!-- Simple CSS (tailored for clarity & modern look) -->
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --muted:#64748b; --accent:#0ea5a4; --danger:#ef4444; --success:#10b981;
+      --glass: rgba(255,255,255,0.6);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    [data-theme="dark"]{
+      --bg:#0b1220; --card:#0f1724; --muted:#94a3b8; --accent:#06b6d4; --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#e9f0f7);min-height:100vh;color:var(--muted);padding:18px}
+    .app{max-width:1100px;margin:18px auto}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{margin:0;font-size:20px;color:var(--accent);font-weight:700}
+    .controls{display:flex;gap:8px;align-items:center}
+    button,select,input{font-family:inherit}
+    button{background:var(--accent);border:0;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .btn-ghost{background:transparent;color:var(--muted);border:1px solid rgba(0,0,0,0.06)}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(15,23,42,0.06);margin-bottom:14px}
+    .grid{display:grid;gap:12px}
+    .grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+    .row{display:flex;gap:12px;align-items:center}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type="text"],input[type="number"],select,textarea,input[type="date"]{
+      width:100%;padding:10px;border-radius:8px;border:1px solid #e6eef8;background:transparent;color:inherit
+    }
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;text-align:left;border-bottom:1px solid #edf4fb}
+    .actions{display:flex;gap:8px}
+    .pill{display:inline-block;padding:6px 8px;border-radius:999px;font-size:12px}
+    .status-draft{background:#f1f5f9;color:#0f1724}
+    .status-paid{background:rgba(16,185,129,0.12);color:var(--success)}
+    .status-overdue{background:rgba(239,68,68,0.12);color:var(--danger)}
+    .line-items{border-radius:8px;border:1px dashed #e6eef8;padding:8px}
+    .line{display:flex;gap:8px;margin-bottom:8px}
+    .line input{flex:1}
+    .total-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+    .big-total{font-size:20px;color:var(--accent);font-weight:700}
+    .template-preview{border-radius:8px;padding:10px;border:1px solid #edf4fb;background:linear-gradient(180deg,rgba(0,0,0,0.01),transparent)}
+    .topbar{display:flex;gap:10px;align-items:center}
+    .stats{display:flex;gap:10px;align-items:center}
+    .stat{background:var(--glass);padding:10px;border-radius:10px;min-width:110px;text-align:center}
+    .qr {max-width:120px}
+    footer{margin-top:20px;color:var(--muted);font-size:13px;text-align:center}
+    @media (max-width:900px){
+      .grid.cols-3{grid-template-columns:1fr}
+      header{flex-direction:column;align-items:flex-start;gap:10px}
+    }
+  </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="gradient-bg text-white sticky top-0 z-50 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-8 h-8 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-                    </svg>
-                    <span class="text-2xl font-bold">CryptoInvoice Pro</span>
-                </div>
-                
-                <div class="hidden md:flex space-x-8">
-                    <a href="#home" class="hover:text-yellow-400 transition cursor-pointer">Home</a>
-                    <a href="#features" class="hover:text-yellow-400 transition cursor-pointer">Features</a>
-                    <a href="#invoicing" class="hover:text-yellow-400 transition cursor-pointer">Invoice Generator</a>
-                    <a href="#pricing" class="hover:text-yellow-400 transition cursor-pointer">Pricing</a>
-                    <a href="#contact" class="hover:text-yellow-400 transition cursor-pointer">Contact</a>
-                </div>
+<body>
+  <div class="app" id="app" data-theme="light">
+    <header>
+      <div>
+        <h1>Invoice Genie</h1>
+        <div class="muted small">Generate, manage, and export invoices — with crypto pricing & QR</div>
+      </div>
 
-                <button id="mobileMenuBtn" class="md:hidden">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
-            </div>
+      <div class="controls">
+        <select id="themeSelect" title="Theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
 
-            <div id="mobileMenu" class="mobile-menu md:hidden pb-4 space-y-2">
-                <a href="#home" class="block py-2 hover:text-yellow-400">Home</a>
-                <a href="#features" class="block py-2 hover:text-yellow-400">Features</a>
-                <a href="#invoicing" class="block py-2 hover:text-yellow-400">Invoice Generator</a>
-                <a href="#pricing" class="block py-2 hover:text-yellow-400">Pricing</a>
-                <a href="#contact" class="block py-2 hover:text-yellow-400">Contact</a>
-            </div>
+        <select id="templateSelect" title="Template">
+          <option value="simple">Simple</option>
+          <option value="modern">Modern</option>
+          <option value="minimal">Minimal</option>
+        </select>
+
+        <button id="btnNewInvoice">+ New Invoice</button>
+        <button id="btnNewClient" class="btn-ghost">+ New Client</button>
+      </div>
+    </header>
+
+    <!-- Dashboard -->
+    <section class="card grid cols-3" id="dashboard">
+      <div>
+        <div class="small muted">Invoices</div>
+        <div style="font-weight:700;font-size:20px" id="statInvoices">0</div>
+      </div>
+      <div>
+        <div class="small muted">Paid</div>
+        <div style="font-weight:700;font-size:20px" id="statPaid">0</div>
+      </div>
+      <div>
+        <div class="small muted">Outstanding</div>
+        <div style="font-weight:700;font-size:20px" id="statOutstanding">0</div>
+      </div>
+    </section>
+
+    <!-- Invoice list & controls -->
+    <section class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div style="display:flex;gap:8px;align-items:center">
+          <label class="small muted" style="margin:0 8px 0 0">Search</label>
+          <input id="searchInput" placeholder="Invoice # or client name" style="width:240px"/>
+          <select id="filterStatus">
+            <option value="all">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="sent">Sent</option>
+            <option value="paid">Paid</option>
+            <option value="overdue">Overdue</option>
+          </select>
+          <select id="sortSelect">
+            <option value="date_desc">Date (newest)</option>
+            <option value="date_asc">Date (oldest)</option>
+            <option value="amount_desc">Amount (high→low)</option>
+            <option value="amount_asc">Amount (low→high)</option>
+          </select>
         </div>
-    </nav>
 
-    <!-- QR Code Modal -->
-    <div id="qrModal" class="modal">
-        <div class="modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-bold text-gray-900">Payment QR Code</h3>
-                <button id="closeQRModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-            </div>
-            <div class="text-center">
-                <div id="qrcode" class="inline-block mb-4"></div>
-                <p class="text-sm text-gray-600 mb-2">Scan to pay with <span id="qrCrypto" class="font-semibold"></span></p>
-                <div class="bg-gray-100 p-3 rounded-lg mb-4">
-                    <p class="text-xs text-gray-600 mb-1">Wallet Address:</p>
-                    <p id="qrAddress" class="text-sm font-mono break-all"></p>
-                </div>
-                <div class="bg-purple-50 p-3 rounded-lg">
-                    <p class="text-lg font-bold text-purple-600"><span id="qrAmount"></span></p>
-                </div>
-                <button id="copyAddress" class="mt-4 w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition">
-                    Copy Address
-                </button>
-            </div>
+        <div class="row">
+          <button id="btnExportCSV" class="btn-ghost">Export CSV</button>
+          <button id="btnRefreshPrices" class="btn-ghost">Refresh Crypto Prices</button>
         </div>
+      </div>
+
+      <div style="margin-top:12px; overflow:auto; max-height:420px;">
+        <table id="invoiceTable">
+          <thead>
+            <tr><th>Invoice</th><th>Client</th><th>Date</th><th>Due</th><th>Amount</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Form modals (hidden areas) -->
+    <div id="modals">
+
+      <!-- Client Modal -->
+      <div class="card" id="clientForm" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:720px;z-index:60">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div><strong id="clientFormTitle">New Client</strong></div>
+          <div><button id="btnCloseClient" class="btn-ghost">Close</button></div>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr">
+          <div>
+            <label>Client Name</label>
+            <input id="client_name" placeholder="Acme Inc."/>
+
+            <label>Contact Person</label>
+            <input id="client_contact" placeholder="John Doe"/>
+
+            <label>Email</label>
+            <input id="client_email" placeholder="contact@acme.com"/>
+
+            <label>Phone</label>
+            <input id="client_phone" placeholder="+91 9876543210"/>
+          </div>
+
+          <div>
+            <label>Address</label>
+            <textarea id="client_address" rows="5" placeholder="Street, City, State, ZIP"></textarea>
+
+            <label>Tax ID / GSTIN</label>
+            <input id="client_tax" placeholder="Optional"/>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button id="saveClientBtn">Save Client</button>
+              <button id="deleteClientBtn" class="btn-ghost" style="display:none">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invoice Modal -->
+      <div class="card" id="invoiceForm" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:1000px;z-index:70;max-height:90vh;overflow:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div><strong id="invoiceFormTitle">New Invoice</strong></div>
+          <div><button id="btnCloseInvoice" class="btn-ghost">Close</button></div>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1fr 320px;gap:14px">
+          <div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1">
+                <label>Client</label>
+                <select id="invoice_client"></select>
+              </div>
+              <div style="width:140px">
+                <label>Invoice #</label>
+                <input id="invoice_number"/>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <div style="flex:1">
+                <label>Invoice Date</label>
+                <input id="invoice_date" type="date"/>
+              </div>
+              <div style="width:140px">
+                <label>Due Date</label>
+                <input id="invoice_due" type="date"/>
+              </div>
+            </div>
+
+            <div style="margin-top:10px">
+              <label>Line Items</label>
+              <div class="line-items" id="lineItems"></div>
+              <div style="margin-top:8px; display:flex; gap:8px">
+                <button id="addLineBtn" class="btn-ghost">+ Add line</button>
+                <button id="clearLines" class="btn-ghost">Clear</button>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <div style="flex:1">
+                <label>Notes (printed on invoice)</label>
+                <textarea id="invoice_notes" rows="3"></textarea>
+              </div>
+              <div style="width:220px">
+                <label>Tax (%)</label>
+                <input id="invoice_tax" type="number" value="0"/>
+                <label style="margin-top:6px">Discount (%)</label>
+                <input id="invoice_discount" type="number" value="0"/>
+                <label style="margin-top:6px">Tax Mode</label>
+                <select id="taxMode">
+                  <option value="exclusive">Exclusive</option>
+                  <option value="inclusive">Inclusive</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button id="saveInvoiceBtn">Save Invoice</button>
+              <button id="sendInvoiceBtn" class="btn-ghost">Mark Sent</button>
+              <button id="markPaidBtn" class="btn-ghost">Mark Paid</button>
+              <button id="cloneInvoiceBtn" class="btn-ghost">Duplicate</button>
+              <button id="deleteInvoiceBtn" class="btn-ghost" style="background:transparent">Delete</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="template-preview card" id="previewBox">
+              <div style="display:flex;justify-content:space-between">
+                <div><strong id="previewClient">Client Name</strong><div class="muted small" id="previewAddress">Client address</div></div>
+                <div><div class="small muted">Invoice</div><div id="previewNumber">INV-000</div></div>
+              </div>
+
+              <div style="margin-top:12px;border-top:1px dashed #edf4fb;padding-top:10px">
+                <div id="previewItems"></div>
+                <div class="total-row">
+                  <div class="small muted">Subtotal</div>
+                  <div id="previewSubtotal">0</div>
+                </div>
+                <div class="total-row">
+                  <div class="small muted">Tax</div>
+                  <div id="previewTax">0</div>
+                </div>
+                <div class="total-row">
+                  <div class="small muted">Discount</div>
+                  <div id="previewDiscount">0</div>
+                </div>
+                <div class="total-row" style="margin-top:8px">
+                  <div class="big-total">Total</div>
+                  <div class="big-total" id="previewTotal">0</div>
+                </div>
+
+                <div style="margin-top:12px">
+                  <label>Pay in crypto (optional)</label>
+                  <input id="cryptoAddress" placeholder="Paste crypto address or UPI"/>
+                  <div style="margin-top:8px;display:flex;gap:8px;">
+                    <select id="cryptoSelect">
+                      <option value="">None</option>
+                      <option value="bitcoin">Bitcoin (BTC)</option>
+                      <option value="ethereum">Ethereum (ETH)</option>
+                      <option value="tether">Tether (USDT)</option>
+                      <option value="solana">Solana (SOL)</option>
+                    </select>
+                    <button id="genQR" class="btn-ghost">Generate QR</button>
+                  </div>
+
+                  <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+                    <div id="cryptoConverted" class="muted small">—</div>
+                  </div>
+
+                  <div style="margin-top:10px">
+                    <div id="qrcode" class="qr"></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div style="margin-top:10px;display:flex;gap:8px;justify-content:space-between">
+              <div>
+                <div class="small muted">Live crypto prices (USD)</div>
+                <div id="priceList" class="small muted">Loading...</div>
+              </div>
+
+              <div style="text-align:right">
+                <div class="small muted">Actions</div>
+                <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
+                  <button id="downloadPDF" class="btn-ghost">Download PDF</button>
+                  <button id="previewPrint" class="btn-ghost">Preview</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
-    <!-- Email Modal -->
-    <div id="emailModal" class="modal">
-        <div class="modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-bold text-gray-900">Send Invoice via Email</h3>
-                <button id="closeEmailModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+    <footer class="muted small">Built with ♥ — drop into GitHub repo and deploy to Vercel. Crypto prices via CoinGecko (public API).</footer>
+  </div>
+
+  <!-- External libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.9.3/dist/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Main JS -->
+  <script>
+  (function(){
+    // ---------- Basic utilities ----------
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const ls = { get:(k)=> JSON.parse(localStorage.getItem(k)||'null'), set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)), remove:(k)=>localStorage.removeItem(k) };
+
+    // ---------- App state ----------
+    let state = {
+      clients: ls.get('clients') || [],
+      invoices: ls.get('invoices') || [],
+      prices: {}, // crypto prices USD
+      editingClient: null,
+      editingInvoice: null,
+      template: 'simple',
+      theme: 'light'
+    };
+
+    // ---------- DOM references ----------
+    const invoiceTableBody = $('#invoiceTable tbody');
+    const statInvoices = $('#statInvoices'), statPaid = $('#statPaid'), statOutstanding = $('#statOutstanding');
+
+    // ---------- Helpers ----------
+    function saveState(){ ls.set('clients', state.clients); ls.set('invoices', state.invoices); }
+    function uid(prefix='id'){ return prefix + Math.random().toString(36).slice(2,9).toUpperCase(); }
+    function formatDate(d){ if(!d) return ''; const dt = new Date(d); return dt.toLocaleDateString(); }
+    function dateISO(offsetDays=0){ const d = new Date(); d.setDate(d.getDate()+offsetDays); return d.toISOString().slice(0,10); }
+
+    // ---------- Invoice calculations ----------
+    function calcInvoice(inv){
+      // inv.lines: [{desc,qty,rate}]
+      const lines = inv.lines || [];
+      let subtotal = 0;
+      for (const l of lines){ const q=Number(l.qty)||0; const r=Number(l.rate)||0; subtotal += q*r; }
+      const discountPct = Number(inv.discount)||0;
+      const taxPct = Number(inv.tax)||0;
+      let discount = subtotal * (discountPct/100);
+      let tax = 0;
+      if(inv.taxMode === 'inclusive'){
+        // tax included in subtotal: tax portion = subtotal * tax/(100+tax)
+        tax = subtotal * (taxPct/(100+taxPct));
+        // if discount present, apply discount after extracting tax proportionally:
+        subtotal = subtotal; // keep for display
+      } else {
+        tax = (subtotal - discount) * (taxPct/100);
+      }
+      const total = (inv.taxMode==='inclusive') ? (subtotal - discount) : (subtotal - discount + tax);
+      return { subtotal: round2(subtotal), tax: round2(tax), discount: round2(discount), total: round2(total) };
+    }
+    function round2(v){ return Math.round((v+Number.EPSILON)*100)/100; }
+
+    // ---------- UI: render invoice table & stats ----------
+    function renderTable(){
+      invoiceTableBody.innerHTML = '';
+      const search = $('#searchInput').value.toLowerCase().trim();
+      const statusFilter = $('#filterStatus').value;
+      const sortMode = $('#sortSelect').value;
+
+      let list = state.invoices.slice();
+
+      if(search){
+        list = list.filter(inv => inv.number.toLowerCase().includes(search) || (getClient(inv.clientId)?.name||'').toLowerCase().includes(search));
+      }
+      if(statusFilter !== 'all'){
+        list = list.filter(inv => inv.status === statusFilter);
+      }
+      // sort
+      list.sort((a,b)=>{
+        if(sortMode==='date_desc') return new Date(b.date) - new Date(a.date);
+        if(sortMode==='date_asc') return new Date(a.date) - new Date(b.date);
+        if(sortMode==='amount_desc') return calcInvoice(b).total - calcInvoice(a).total;
+        if(sortMode==='amount_asc') return calcInvoice(a).total - calcInvoice(b).total;
+        return 0;
+      });
+
+      for (const inv of list){
+        const c = getClient(inv.clientId);
+        const calc = calcInvoice(inv);
+        const tr = document.createElement('tr');
+
+        const due = inv.dueDate ? formatDate(inv.dueDate) : '-';
+        const date = inv.date ? formatDate(inv.date) : '-';
+        const statusPill = `<span class="pill ${inv.status==='paid'?'status-paid':inv.status==='overdue'?'status-overdue':'status-draft'}">${inv.status||'draft'}</span>`;
+
+        tr.innerHTML = `
+          <td><strong>${inv.number}</strong><div class="small muted">${inv.notes?inv.notes.slice(0,40):''}</div></td>
+          <td>${c ? c.name : '<span class="muted small">Unknown</span>'}</td>
+          <td>${date}</td>
+          <td>${due}</td>
+          <td>₹ ${calc.total.toLocaleString()}</td>
+          <td>${statusPill}</td>
+          <td style="text-align:right">
+            <div class="actions">
+              <button class="btn-ghost edit" data-id="${inv.id}">Edit</button>
+              <button class="btn-ghost send" data-id="${inv.id}">Send</button>
+              <button class="btn-ghost pdf" data-id="${inv.id}">PDF</button>
             </div>
-            <form id="emailForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold mb-2 text-gray-700">Recipient Email</label>
-                    <input type="email" id="recipientEmail" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="client@example.com" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-2 text-gray-700">Subject</label>
-                    <input type="text" id="emailSubject" class="w-full border border-gray-300 rounded-lg px-4 py-2" value="Invoice from CryptoInvoice Pro" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-2 text-gray-700">Message</label>
-                    <textarea id="emailMessage" class="w-full border border-gray-300 rounded-lg px-4 py-2 h-32" placeholder="Dear Client, Please find attached your invoice..."></textarea>
-                </div>
-                <div class="flex gap-4">
-                    <button type="submit" class="flex-1 btn-primary text-white py-2 rounded-lg">Send Invoice</button>
-                    <button type="button" id="cancelEmail" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
+          </td>
+        `;
+        invoiceTableBody.appendChild(tr);
+      }
 
-    <!-- Hero Section -->
-    <section id="home" class="hero-gradient text-white py-20">
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <div class="crypto-badge inline-block bg-yellow-400 text-purple-900 px-4 py-2 rounded-full font-semibold mb-4">
-                🚀 Advanced Crypto Invoice Generator with QR Codes
-            </div>
-            <h1 class="text-5xl md:text-6xl font-bold mb-6">Professional Crypto Invoicing Made Simple</h1>
-            <p class="text-xl md:text-2xl mb-8 text-gray-300">Generate invoices with QR codes, email directly, and accept 20+ cryptocurrencies</p>
-            <div class="flex justify-center gap-4 flex-wrap">
-                <a href="#invoicing" class="inline-block bg-yellow-400 text-purple-900 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-yellow-300 transition">
-                    Create Invoice Now
-                </a>
-                <a href="#features" class="inline-block bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-purple-900 transition">
-                    View Features
-                </a>
-            </div>
-        </div>
-    </section>
+      // stats
+      statInvoices.textContent = state.invoices.length;
+      const paidCount = state.invoices.filter(i=>i.status==='paid').length;
+      statPaid.textContent = paidCount;
+      const outstanding = state.invoices.filter(i=>i.status!=='paid').reduce((s,i)=>s + calcInvoice(i).total,0);
+      statOutstanding.textContent = '₹ ' + round2(outstanding).toLocaleString();
+    }
 
-    <!-- Advanced Features Section -->
-    <section id="features" class="max-w-7xl mx-auto px-4 py-16">
-        <h2 class="text-4xl font-bold text-center mb-4 text-gray-900">Advanced Invoice Features</h2>
-        <p class="text-center text-gray-600 mb-12">Everything you need for professional crypto invoicing</p>
-        
-        <div class="grid md:grid-cols-3 gap-8 mb-12">
-            <div class="bg-white p-6 rounded-lg shadow-lg card-hover">
-                <div class="text-purple-600 mb-4">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-2 text-gray-900">QR Code Generation</h3>
-                <p class="text-gray-600">Automatically generate payment QR codes for instant crypto transfers</p>
-            </div>
+    // ---------- Clients ----------
+    function openClientForm(client){
+      state.editingClient = client || null;
+      $('#clientFormTitle').textContent = client ? 'Edit Client' : 'New Client';
+      $('#client_name').value = client?.name||'';
+      $('#client_contact').value = client?.contact||'';
+      $('#client_email').value = client?.email||'';
+      $('#client_phone').value = client?.phone||'';
+      $('#client_address').value = client?.address||'';
+      $('#client_tax').value = client?.tax||'';
+      $('#deleteClientBtn').style.display = client ? 'inline-block' : 'none';
+      $('#clientForm').style.display = 'block';
+    }
+    function closeClientForm(){ $('#clientForm').style.display = 'none'; state.editingClient = null; }
+    $('#btnNewClient').addEventListener('click',()=>openClientForm(null));
+    $('#btnCloseClient').addEventListener('click',closeClientForm);
+    $('#saveClientBtn').addEventListener('click',()=>{
+      const c = {
+        id: state.editingClient?.id || uid('CL'),
+        name: $('#client_name').value.trim() || 'Unnamed',
+        contact: $('#client_contact').value.trim(),
+        email: $('#client_email').value.trim(),
+        phone: $('#client_phone').value.trim(),
+        address: $('#client_address').value.trim(),
+        tax: $('#client_tax').value.trim()
+      };
+      if(state.editingClient){
+        const idx = state.clients.findIndex(x=>x.id===state.editingClient.id);
+        state.clients[idx] = c;
+      } else {
+        state.clients.push(c);
+      }
+      saveState(); closeClientForm(); refreshClientOptions(); renderTable();
+    });
+    $('#deleteClientBtn').addEventListener('click',()=>{
+      if(!state.editingClient) return;
+      state.clients = state.clients.filter(c=>c.id !== state.editingClient.id);
+      // also remove or orphan invoices - keep them but remove client ref
+      state.invoices = state.invoices.map(inv => inv.clientId === state.editingClient.id ? ({...inv, clientId:null}) : inv);
+      saveState(); closeClientForm(); refreshClientOptions(); renderTable();
+    });
 
-            <div class="bg-white p-6 rounded-lg shadow-lg card-hover">
-                <div class="text-purple-600 mb-4">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-2 text-gray-900">Email Invoices</h3>
-                <p class="text-gray-600">Send invoices directly to clients via email with one click</p>
-            </div>
+    function refreshClientOptions(){
+      const sel = $('#invoice_client');
+      sel.innerHTML = '';
+      const empty = document.createElement('option'); empty.value = ''; empty.textContent = '-- select client --'; sel.appendChild(empty);
+      for (const c of state.clients){
+        const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt);
+      }
+    }
+    function getClient(id){ return state.clients.find(c=>c.id===id) || null; }
 
-            <div class="bg-white p-6 rounded-lg shadow-lg card-hover">
-                <div class="text-purple-600 mb-4">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-2 text-gray-900">20+ Cryptocurrencies</h3>
-                <p class="text-gray-600">Support for BTC, ETH, USDT, USDC, and 16+ other cryptos</p>
-            </div>
+    // ---------- Invoice form ----------
+    function openInvoiceForm(inv){
+      state.editingInvoice = inv || defaultInvoice();
+      $('#invoiceFormTitle').textContent = inv ? 'Edit Invoice' : 'New Invoice';
+      // populate fields
+      refreshClientOptions();
+      $('#invoice_client').value = state.editingInvoice.clientId || '';
+      $('#invoice_number').value = state.editingInvoice.number || generateInvoiceNumber();
+      $('#invoice_date').value = state.editingInvoice.date || dateISO();
+      $('#invoice_due').value = state.editingInvoice.dueDate || dateISO(7);
+      $('#invoice_tax').value = state.editingInvoice.tax || 0;
+      $('#invoice_discount').value = state.editingInvoice.discount || 0;
+      $('#invoice_notes').value = state.editingInvoice.notes || '';
+      $('#taxMode').value = state.editingInvoice.taxMode || 'exclusive';
+      $('#cryptoAddress').value = state.editingInvoice.crypto || '';
+      // line items
+      renderLineItems();
+      // preview
+      renderPreview();
+      $('#invoiceForm').style.display = 'block';
+    }
+    function closeInvoiceForm(){ $('#invoiceForm').style.display='none'; state.editingInvoice=null; }
 
-            <div class="bg-white p-6 rounded-lg shadow-lg card-hover">
-                <div class="text-purple-600 mb-4">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-2 text-gray-900">Multiple Themes</h3>
-                <p class="text-gray-600">Choose from Modern, Dark, Minimal, and Colorful invoice themes</p>
-            </div>
+    $('#btnNewInvoice').addEventListener('click',()=>openInvoiceForm(null));
+    $('#btnCloseInvoice').addEventListener('click',closeInvoiceForm);
 
-            <div class="bg-white p-6 rounded-lg shadow-lg card-hover">
-                <div class="text-purple-600 mb-4">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-2 text-gray-900">Tax Calculations</h3>
-                <p class="text-gray-600">Automatic tax, discount, and shipping calculations</p>
-            </div>
+    function defaultInvoice(){
+      return {
+        id: uid('INV'),
+        clientId: null,
+        number: generateInvoiceNumber(),
+        date: dateISO(),
+        dueDate: dateISO(7),
+        lines: [{desc:'Service', qty:1, rate:0}],
+        tax:0,
+        discount:0,
+        taxMode:'exclusive',
+        notes:'',
+        status:'draft',
+        crypto:''
+      };
+    }
+    function generateInvoiceNumber(){
+      const n = (state.invoices.length + 1).toString().padStart(4,'0');
+      return 'INV-' + new Date().getFullYear().toString().slice(-2) + '-' + n;
+    }
 
-            <div class="bg-white p-6 rounded-lg shadow-lg card-hover">
-                <div class="text-purple-600 mb-4">
-                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold mb-2 text-gray-900">Export & Print</h3>
-                <p class="text-gray-600">Download as PDF or print professional invoices</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Advanced Invoice Generator -->
-    <section id="invoicing" class="bg-gray-100 py-16">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">Advanced Invoice Generator</h1>
-                <p class="text-gray-600">Create professional crypto invoices with QR codes and email delivery</p>
-            </div>
-
-            <!-- Tabs -->
-            <div class="bg-white rounded-t-lg shadow-lg">
-                <div class="flex border-b overflow-x-auto">
-                    <button id="tab-create" class="tab-active px-6 py-4 font-semibold whitespace-nowrap">Create Invoice</button>
-                    <button id="tab-manage" class="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Manage Invoices</button>
-                    <button id="tab-themes" class="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Themes</button>
-                    <button id="tab-settings" class="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Settings</button>
-                </div>
-
-                <!-- Create Invoice Tab -->
-                <div id="content-create" class="p-8">
-                    <div class="grid lg:grid-cols-2 gap-8">
-                        <!-- Invoice Form -->
-                        <div>
-                            <h3 class="text-2xl font-bold mb-6 text-gray-900">Invoice Details</h3>
-                            
-                            <!-- Business Info -->
-                            <div class="mb-6 p-4 bg-purple-50 rounded-lg">
-                                <h4 class="font-semibold mb-3 text-gray-900">Your Business Info</h4>
-                                <input type="text" id="businessName" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2" placeholder="Business Name">
-                                <input type="email" id="businessEmail" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2" placeholder="business@example.com">
-                                <input type="text" id="businessAddress" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Business Address">
-                            </div>
-
-                            <!-- Client Info -->
-                            <div class="mb-6">
-                                <h4 class="font-semibold mb-3 text-gray-900">Client Information</h4>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <input type="text" id="clientName" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Client Name *">
-                                    <input type="email" id="clientEmail" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Client Email *">
-                                </div>
-                                <input type="text" id="clientAddress" class="w-full border border-gray-300 rounded-lg px-4 py-2 mt-2" placeholder="Client Address">
-                            </div>
-
-                            <!-- Invoice Details -->
-                            <div class="mb-6 grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-semibold mb-2 text-gray-700">Invoice Date</label>
-                                    <input type="date" id="invoiceDate" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-semibold mb-2 text-gray-700">Due Date</label>
-                                    <input type="date" id="dueDate" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                                </div>
-                            </div>
-
-                            <!-- Cryptocurrency Selection -->
-                            <div class="mb-6">
-                                <label class="block text-sm font-semibold mb-2 text-gray-700">Payment Cryptocurrency *</label>
-                                <select id="crypto" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                                    <option value="BTC">Bitcoin (BTC)</option>
-                                    <option value="ETH">Ethereum (ETH)</option>
-                                    <option value="USDT">Tether (USDT)</option>
-                                    <option value="USDC">USD Coin (USDC)</option>
-                                    <option value="BNB">Binance Coin (BNB)</option>
-                                    <option value="XRP">Ripple (XRP)</option>
-                                    <option value="ADA">Cardano (ADA)</option>
-                                    <option value="SOL">Solana (SOL)</option>
-                                    <option value="DOT">Polkadot (DOT)</option>
-                                    <option value="DOGE">Dogecoin (DOGE)</option>
-                                    <option value="MATIC">Polygon (MATIC)</option>
-                                    <option value="LTC">Litecoin (LTC)</option>
-                                    <option value="AVAX">Avalanche (AVAX)</option>
-                                    <option value="LINK">Chainlink (LINK)</option>
-                                    <option value="ATOM">Cosmos (ATOM)</option>
-                                    <option value="UNI">Uniswap (UNI)</option>
-                                    <option value="XLM">Stellar (XLM)</option>
-                                    <option value="ALGO">Algorand (ALGO)</option>
-                                    <option value="VET">VeChain (VET)</option>
-                                    <option value="FIL">Filecoin (FIL)</option>
-                                </select>
-                            </div>
-
-                            <!-- Wallet Address -->
-                            <div class="mb-6">
-                                <label class="block text-sm font-semibold mb-2 text-gray-700">Your Wallet Address</label>
-                                <input type="text" id="walletAddress" class="w-full border border-gray-300 rounded-lg px-4 py-2 font-mono text-sm" placeholder="Enter your crypto wallet address">
-                            </div>
-
-                            <!-- Line Items -->
-                            <div class="mb-6">
-                                <div class="flex justify-between items-center mb-3">
-                                    <h4 class="font-semibold text-gray-900">Invoice Items</h4>
-                                    <button id="addItemBtn" class="text-purple-600 hover:text-purple-700 font-semibold flex items-center">
-                                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                        </svg>
-                                        Add Item
-                                    </button>
-                                </div>
-                                <div id="lineItems"></div>
-                            </div>
-
-                            <!-- Additional Options -->
-                            <div class="mb-6 grid grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-sm font-semibold mb-2 text-gray-700">Tax (%)</label>
-                                    <input type="number" id="taxRate" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="0" value="0" min="0" max="100">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-semibold mb-2 text-gray-700">Discount (%)</label>
-                                    <input type="number" id="discountRate" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="0" value="0" min="0" max="100">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-semibold mb-2 text-gray-700">Shipping ($)</label>
-                                    <input type="number" id="shipping" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="0" value="0" min="0">
-                                </div>
-                            </div>
-
-                            <!-- Notes -->
-                            <div class="mb-6">
-                                <label class="block text-sm font-semibold mb-2 text-gray-700">Notes / Terms</label>
-                                <textarea id="invoiceNotes" class="w-full border border-gray-300 rounded-lg px-4 py-2 h-24" placeholder="Payment terms, notes, or additional information..."></textarea>
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="grid grid-cols-2 gap-4">
-                                <button id="generateBtn" class="btn-primary text-white px-6 py-3 rounded-lg font-semibold">
-                                    Generate Invoice
-                                </button>
-                                <button id="generateQRBtn" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition font-semibold">
-                                    Generate QR Code
-                                </button>
-                                <button id="emailInvoiceBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-semibold">
-                                    Email Invoice
-                                </button>
-                                <button id="printBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition font-semibold">
-                                    Print Invoice
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Invoice Preview -->
-                        <div>
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-2xl font-bold text-gray-900">Live Preview</h3>
-                                <select id="themeSelector" class="border border-gray-300 rounded-lg px-4 py-2">
-                                    <option value="modern">Modern</option>
-                                    <option value="dark">Dark</option>
-                                    <option value="minimal">Minimal</option>
-                                    <option value="colorful">Colorful</option>
-                                </select>
-                            </div>
-                            <div id="invoicePreview" class="invoice-preview theme-modern rounded-lg p-8 shadow-lg">
-                                <div class="text-center text-gray-400 py-20">
-                                    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    <p>Fill in the details to see your invoice preview</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Manage Invoices Tab -->
-                <div id="content-manage" class="p-8 hidden">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-2xl font-bold text-gray-900">Your Invoices</h3>
-                        <div class="flex gap-2">
-                            <input type="text" id="searchInvoice" class="border border-gray-300 rounded-lg px-4 py-2" placeholder="Search invoices...">
-                            <select id="filterStatus" class="border border-gray-300 rounded-lg px-4 py-2">
-                                <option value="all">All Status</option>
-                                <option value="paid">Paid</option>
-                                <option value="pending">Pending</option>
-                                <option value="overdue">Overdue</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Invoice #</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Client</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Amount</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Crypto</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="invoiceTableBody">
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="px-6 py-4 text-gray-900">#INV-0001</td>
-                                    <td class="px-6 py-4 text-gray-900">Tech Corp</td>
-                                    <td class="px-6 py-4 font-semibold text-gray-900">$5,000.00</td>
-                                    <td class="px-6 py-4"><span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-sm">BTC</span></td>
-                                    <td class="px-6 py-4 text-gray-900">2024-11-10</td>
-                                    <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">Paid</span></td>
-                                    <td class="px-6 py-4">
-                                        <button class="text-blue-600 hover:underline mr-2">View</button>
-                                        <button class="text-purple-600 hover:underline">Email</button>
-                                    </td>
-                                </tr>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="px-6 py-4 text-gray-900">#INV-0002</td>
-                                    <td class="px-6 py-4 text-gray-900">Digital Agency</td>
-                                    <td class="px-6 py-4 font-semibold text-gray-900">$3,500.00</td>
-                                    <td class="px-6 py-4"><span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-sm">ETH</span></td>
-                                    <td class="px-6 py-4 text-gray-900">2024-11-15</td>
-                                    <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">Pending</span></td>
-                                    <td class="px-6 py-4">
-                                        <button class="text-blue-600 hover:underline mr-2">View</button>
-                                        <button class="text-purple-600 hover:underline">Email</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Themes Tab -->
-                <div id="content-themes" class="p-8 hidden">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Invoice Themes</h3>
-                    <p class="text-gray-600 mb-8">Choose a theme that matches your brand</p>
-                    
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="border-2 border-purple-600 rounded-lg p-4 cursor-pointer hover:shadow-lg transition theme-card" data-theme="modern">
-                            <div class="bg-white h-40 rounded-lg mb-3 flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="w-20 h-2 bg-purple-600 mx-auto mb-2"></div>
-                                    <div class="w-32 h-1 bg-gray-300 mx-auto mb-1"></div>
-                                    <div class="w-28 h-1 bg-gray-300 mx-auto"></div>
-                                </div>
-                            </div>
-                            <h4 class="font-semibold text-gray-900 mb-1">Modern</h4>
-                            <p class="text-sm text-gray-600">Clean and professional design</p>
-                        </div>
-
-                        <div class="border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:shadow-lg transition theme-card" data-theme="dark">
-                            <div class="bg-gray-800 h-40 rounded-lg mb-3 flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="w-20 h-2 bg-purple-400 mx-auto mb-2"></div>
-                                    <div class="w-32 h-1 bg-gray-600 mx-auto mb-1"></div>
-                                    <div class="w-28 h-1 bg-gray-600 mx-auto"></div>
-                                </div>
-                            </div>
-                            <h4 class="font-semibold text-gray-900 mb-1">Dark</h4>
-                            <p class="text-sm text-gray-600">Elegant dark theme</p>
-                        </div>
-
-                        <div class="border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:shadow-lg transition theme-card" data-theme="minimal">
-                            <div class="bg-gray-50 h-40 rounded-lg mb-3 flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="w-20 h-2 bg-gray-800 mx-auto mb-2"></div>
-                                    <div class="w-32 h-1 bg-gray-400 mx-auto mb-1"></div>
-                                    <div class="w-28 h-1 bg-gray-400 mx-auto"></div>
-                                </div>
-                            </div>
-                            <h4 class="font-semibold text-gray-900 mb-1">Minimal</h4>
-                            <p class="text-sm text-gray-600">Simple and minimalist</p>
-                        </div>
-
-                        <div class="border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:shadow-lg transition theme-card" data-theme="colorful">
-                            <div class="bg-gradient-to-br from-purple-100 to-blue-100 h-40 rounded-lg mb-3 flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="w-20 h-2 bg-purple-600 mx-auto mb-2"></div>
-                                    <div class="w-32 h-1 bg-purple-400 mx-auto mb-1"></div>
-                                    <div class="w-28 h-1 bg-blue-400 mx-auto"></div>
-                                </div>
-                            </div>
-                            <h4 class="font-semibold text-gray-900 mb-1">Colorful</h4>
-                            <p class="text-sm text-gray-600">Vibrant and eye-catching</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Settings Tab -->
-                <div id="content-settings" class="p-8 hidden">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Invoice Settings</h3>
-                    <div class="space-y-6 max-w-2xl">
-                        <div>
-                            <h4 class="font-semibold mb-3 text-gray-900">Default Wallet Addresses</h4>
-                            <div class="space-y-2">
-                                <input type="text" id="btcWallet" class="w-full border border-gray-300 rounded-lg px-4 py-2 font-mono text-sm" placeholder="Bitcoin (BTC) Address">
-                                <input type="text" id="ethWallet" class="w-full border border-gray-300 rounded-lg px-4 py-2 font-mono text-sm" placeholder="Ethereum (ETH) Address">
-                                <input type="text" id="usdtWallet" class="w-full border border-gray-300 rounded-lg px-4 py-2 font-mono text-sm" placeholder="USDT Address">
-                                <input type="text" id="usdcWallet" class="w-full border border-gray-300 rounded-lg px-4 py-2 font-mono text-sm" placeholder="USDC Address">
-                            </div>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold mb-3 text-gray-900">Invoice Prefix</h4>
-                            <input type="text" id="invoicePrefix" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="INV-" value="INV-">
-                        </div>
-                        <div>
-                            <h4 class="font-semibold mb-3 text-gray-900">Default Payment Terms</h4>
-                            <textarea id="paymentTerms" class="w-full border border-gray-300 rounded-lg px-4 py-2 h-32" placeholder="Default payment terms...">Payment due within 30 days. Late payments may incur fees.</textarea>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold mb-3 text-gray-900">Email Settings (Optional)</h4>
-                            <p class="text-sm text-gray-600 mb-2">Configure your email service for sending invoices</p>
-                            <input type="text" id="emailService" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-2" placeholder="Email Service ID (EmailJS)">
-                            <input type="text" id="emailTemplate" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Email Template ID">
-                        </div>
-                        <button id="saveSettingsBtn" class="btn-primary text-white px-6 py-3 rounded-lg">Save Settings</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="max-w-7xl mx-auto px-4 py-16">
-        <h1 class="text-4xl font-bold text-center mb-4 text-gray-900">Choose Your Plan</h1>
-        <p class="text-center text-gray-600 mb-12">Professional crypto invoicing for every business size</p>
-        
-        <div class="grid md:grid-cols-3 gap-8">
-            <div class="bg-white rounded-lg shadow-lg p-8 border-2 border-gray-200 card-hover">
-                <h3 class="text-2xl font-bold mb-4 text-gray-900">Starter</h3>
-                <p class="text-4xl font-bold mb-6 text-gray-900">$0<span class="text-lg text-gray-600">/mo</span></p>
-                <ul class="space-y-3 mb-8">
-                    <li class="flex items-center text-gray-700">✓ 10 invoices/month</li>
-                    <li class="flex items-center text-gray-700">✓ 5 cryptocurrencies</li>
-                    <li class="flex items-center text-gray-700">✓ Basic themes</li>
-                    <li class="flex items-center text-gray-700">✓ QR code generation</li>
-                    <li class="flex items-center text-gray-700">✓ PDF export</li>
-                </ul>
-                <button class="w-full bg-gray-200 text-gray-800 py-3 rounded-lg hover:bg-gray-300 transition">Get Started</button>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-xl p-8 border-4 border-purple-600 transform scale-105 card-hover">
-                <div class="bg-purple-600 text-white text-sm font-semibold px-4 py-1 rounded-full inline-block mb-4">Most Popular</div>
-                <h3 class="text-2xl font-bold mb-4 text-gray-900">Professional</h3>
-                <p class="text-4xl font-bold mb-6 text-gray-900">$29<span class="text-lg text-gray-600">/mo</span></p>
-                <ul class="space-y-3 mb-8">
-                    <li class="flex items-center text-gray-700">✓ Unlimited invoices</li>
-                    <li class="flex items-center text-gray-700">✓ 20+ cryptocurrencies</li>
-                    <li class="flex items-center text-gray-700">✓ All themes</li>
-                    <li class="flex items-center text-gray-700">✓ Email invoices</li>
-                    <li class="flex items-center text-gray-700">✓ QR codes</li>
-                    <li class="flex items-center text-gray-700">✓ Custom branding</li>
-                    <li class="flex items-center text-gray-700">✓ Analytics</li>
-                </ul>
-                <button class="w-full btn-primary text-white py-3 rounded-lg">Get Started</button>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-lg p-8 border-2 border-gray-200 card-hover">
-                <h3 class="text-2xl font-bold mb-4 text-gray-900">Enterprise</h3>
-                <p class="text-4xl font-bold mb-6 text-gray-900">$99<span class="text-lg text-gray-600">/mo</span></p>
-                <ul class="space-y-3 mb-8">
-                    <li class="flex items-center text-gray-700">✓ Everything in Pro</li>
-                    <li class="flex items-center text-gray-700">✓ API access</li>
-                    <li class="flex items-center text-gray-700">✓ Dedicated support</li>
-                    <li class="flex items-center text-gray-700">✓ Custom integrations</li>
-                    <li class="flex items-center text-gray-700">✓ Multi-user accounts</li>
-                    <li class="flex items-center text-gray-700">✓ White-label</li>
-                </ul>
-                <button class="w-full bg-gray-200 text-gray-800 py-3 rounded-lg hover:bg-gray-300 transition">Contact Sales</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="max-w-4xl mx-auto px-4 py-16">
-        <h1 class="text-4xl font-bold text-center mb-12 text-gray-900">Get In Touch</h1>
-        
-        <div class="grid md:grid-cols-2 gap-8">
-            <div class="bg-white rounded-lg shadow-lg p-8">
-                <h2 class="text-2xl font-bold mb-6 text-gray-900">Send Message</h2>
-                <form class="space-y-4">
-                    <input type="text" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Your name">
-                    <input type="email" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="your@email.com">
-                    <input type="text" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="Subject">
-                    <textarea class="w-full border border-gray-300 rounded-lg px-4 py-2 h-32" placeholder="Your message"></textarea>
-                    <button type="submit" class="w-full btn-primary text-white py-3 rounded-lg">Send Message</button>
-                </form>
-            </div>
-
-            <div class="space-y-6">
-                <div class="bg-white rounded-lg shadow-lg p-8">
-                    <h3 class="font-bold text-lg mb-4 text-gray-900">Contact Info</h3>
-                    <div class="space-y-3 text-gray-700">
-                        <p>📧 support@cryptoinvoice.com</p>
-                        <p>📞 +1 (555) 123-4567</p>
-                        <p>📍 San Francisco, CA</p>
-                    </div>
-                </div>
-                <div class="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg p-6">
-                    <h3 class="font-bold text-lg mb-2 text-gray-900">Schedule Demo</h3>
-                    <p class="text-gray-700 mb-4">See how we can help your business</p>
-                    <button class="bg-white text-purple-600 px-6 py-2 rounded-lg hover:bg-gray-50 transition font-semibold">Book Now</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12 mt-16">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div>
-                    <div class="flex items-center space-x-2 mb-4">
-                        <svg class="w-8 h-8 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
-                        </svg>
-                        <span class="text-xl font-bold">CryptoInvoice Pro</span>
-                    </div>
-                    <p class="text-gray-400">Professional crypto invoicing platform</p>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Product</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#features" class="hover:text-white">Features</a></li>
-                        <li><a href="#pricing" class="hover:text-white">Pricing</a></li>
-                        <li><a href="#" class="hover:text-white">API</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Resources</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">Documentation</a></li>
-                        <li><a href="#" class="hover:text-white">Tutorials</a></li>
-                        <li><a href="#" class="hover:text-white">Blog</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Company</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white">About</a></li>
-                        <li><a href="#contact" class="hover:text-white">Contact</a></li>
-                        <li><a href="#" class="hover:text-white">Careers</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 CryptoInvoice Pro. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // Initialize
-        let invoiceCount = 2;
-        let lineItemCount = 0;
-        let currentTheme = 'modern';
-        let currentQRCode = null;
-        
-        // Set today's date
-        document.getElementById('invoiceDate').valueAsDate = new Date();
-        
-        // Mobile menu
-        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-            document.getElementById('mobileMenu').classList.toggle('active');
+    // line items UI
+    function renderLineItems(){
+      const el = $('#lineItems'); el.innerHTML = '';
+      (state.editingInvoice.lines || []).forEach((ln, idx) => {
+        const row = document.createElement('div'); row.className='line';
+        row.innerHTML = `
+          <input data-field="desc" placeholder="Description" value="${escapeHtml(ln.desc)}" />
+          <input data-field="qty" type="number" style="width:90px" value="${ln.qty}" />
+          <input data-field="rate" type="number" style="width:110px" value="${ln.rate}" />
+          <button class="btn-ghost remove" data-idx="${idx}">✕</button>
+        `;
+        el.appendChild(row);
+        // events
+        const inputs = row.querySelectorAll('input');
+        inputs.forEach(inp => {
+          inp.addEventListener('input', () => {
+            const field = inp.getAttribute('data-field');
+            state.editingInvoice.lines[idx][field] = inp.value;
+            renderPreview();
+          });
         });
-
-        // Tab switching
-        const tabs = ['create', 'manage', 'themes', 'settings'];
-        tabs.forEach(tab => {
-            document.getElementById(`tab-${tab}`).addEventListener('click', () => {
-                tabs.forEach(t => {
-                    document.getElementById(`tab-${t}`).classList.remove('tab-active');
-                    document.getElementById(`content-${t}`).classList.add('hidden');
-                    document.getElementById(`tab-${t}`).classList.add('text-gray-600');
-                });
-                document.getElementById(`tab-${tab}`).classList.add('tab-active');
-                document.getElementById(`content-${tab}`).classList.remove('hidden');
-                document.getElementById(`tab-${tab}`).classList.remove('text-gray-600');
-            });
+        row.querySelector('.remove').addEventListener('click', ()=>{
+          state.editingInvoice.lines.splice(idx,1);
+          renderLineItems(); renderPreview();
         });
+      });
+    }
 
-        // Theme selector
-        document.getElementById('themeSelector').addEventListener('change', function() {
-            currentTheme = this.value;
-            const preview = document.getElementById('invoicePreview');
-            preview.className = `invoice-preview theme-${currentTheme} rounded-lg p-8 shadow-lg`;
-            calculateInvoice();
-        });
+    $('#addLineBtn').addEventListener('click', ()=>{
+      state.editingInvoice.lines = state.editingInvoice.lines || [];
+      state.editingInvoice.lines.push({desc:'',qty:1,rate:0});
+      renderLineItems(); renderPreview();
+    });
+    $('#clearLines').addEventListener('click', ()=>{
+      state.editingInvoice.lines = [];
+      renderLineItems(); renderPreview();
+    });
 
-        // Theme cards
-        document.querySelectorAll('.theme-card').forEach(card => {
-            card.addEventListener('click', function() {
-                const theme = this.dataset.theme;
-                document.getElementById('themeSelector').value = theme;
-                currentTheme = theme;
-                const preview = document.getElementById('invoicePreview');
-                preview.className = `invoice-preview theme-${theme} rounded-lg p-8 shadow-lg`;
-                calculateInvoice();
-                
-                // Update borders
-                document.querySelectorAll('.theme-card').forEach(c => {
-                    c.classList.remove('border-purple-600');
-                    c.classList.add('border-gray-300');
-                });
-                this.classList.remove('border-gray-300');
-                this.classList.add('border-purple-600');
-            });
-        });
+    // live preview
+    function renderPreview(){
+      const inv = state.editingInvoice;
+      $('#previewClient').textContent = getClient(inv.clientId)?.name || 'No client selected';
+      $('#previewAddress').textContent = getClient(inv.clientId)?.address || '';
+      $('#previewNumber').textContent = inv.number || '';
+      const itemsBox = $('#previewItems'); itemsBox.innerHTML = '';
+      inv.lines.forEach(ln => {
+        const div = document.createElement('div'); div.style.display='flex'; div.style.justifyContent='space-between'; div.style.marginBottom='4px';
+        div.innerHTML = `<div class="small">${escapeHtml(ln.desc||'')}</div><div class="small">₹ ${(Number(ln.qty)||0)*(Number(ln.rate)||0)}</div>`;
+        itemsBox.appendChild(div);
+      });
+      const c = calcInvoice(inv);
+      $('#previewSubtotal').textContent = '₹ '+c.subtotal;
+      $('#previewTax').textContent = '₹ '+c.tax;
+      $('#previewDiscount').textContent = '₹ '+c.discount;
+      $('#previewTotal').textContent = '₹ '+c.total;
+      // crypto convert
+      updateCryptoConverted();
+    }
 
-        // Add line item
-        document.getElementById('addItemBtn').addEventListener('click', addLineItem);
-        
-        function addLineItem() {
-            lineItemCount++;
-            const lineItemsDiv = document.getElementById('lineItems');
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'grid grid-cols-12 gap-2 mb-2';
-            itemDiv.innerHTML = `
-                <input type="text" class="col-span-5 border border-gray-300 rounded-lg px-3 py-2 text-sm item-desc" placeholder="Description">
-                <input type="number" class="col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm item-qty" placeholder="Qty" value="1" min="1">
-                <input type="number" class="col-span-3 border border-gray-300 rounded-lg px-3 py-2 text-sm item-rate" placeholder="Rate" value="0" min="0" step="0.01">
-                <div class="col-span-2 flex items-center justify-between">
-                    <span class="text-sm font-semibold item-total">$0.00</span>
-                    <button class="text-red-500 hover:text-red-700 remove-item text-xl">×</button>
-                </div>
-            `;
-            lineItemsDiv.appendChild(itemDiv);
-            
-            // Add event listeners
-            itemDiv.querySelectorAll('.item-qty, .item-rate, .item-desc').forEach(input => {
-                input.addEventListener('input', calculateInvoice);
-            });
-            
-            itemDiv.querySelector('.remove-item').addEventListener('click', () => {
-                itemDiv.remove();
-                calculateInvoice();
-            });
-            
-            calculateInvoice();
-        }
+    // save invoice
+    $('#saveInvoiceBtn').addEventListener('click', ()=>{
+      // gather fields
+      const inv = state.editingInvoice;
+      inv.clientId = $('#invoice_client').value || null;
+      inv.number = $('#invoice_number').value || inv.number;
+      inv.date = $('#invoice_date').value || dateISO();
+      inv.dueDate = $('#invoice_due').value || '';
+      inv.tax = Number($('#invoice_tax').value)||0;
+      inv.discount = Number($('#invoice_discount').value)||0;
+      inv.taxMode = $('#taxMode').value;
+      inv.notes = $('#invoice_notes').value||'';
+      inv.crypto = $('#cryptoAddress').value||'';
+      // persist lines from DOM
+      // already kept in state via inputs
+      if(!state.invoices.find(i=>i.id===inv.id)){
+        state.invoices.push(inv);
+      } else {
+        const idx = state.invoices.findIndex(i=>i.id===inv.id);
+        state.invoices[idx] = inv;
+      }
+      saveState(); renderTable(); closeInvoiceForm();
+    });
 
-        // Add first line item
-        addLineItem();
+    // send/mark paid/clone/delete buttons
+    $('#sendInvoiceBtn').addEventListener('click', ()=>{
+      if(!state.editingInvoice) return;
+      state.editingInvoice.status = 'sent';
+      saveState(); renderTable(); renderPreview();
+    });
+    $('#markPaidBtn').addEventListener('click', ()=>{
+      if(!state.editingInvoice) return;
+      state.editingInvoice.status = 'paid';
+      saveState(); renderTable(); renderPreview();
+    });
+    $('#cloneInvoiceBtn').addEventListener('click', ()=>{
+      if(!state.editingInvoice) return;
+      const clone = JSON.parse(JSON.stringify(state.editingInvoice));
+      clone.id = uid('INV'); clone.number = generateInvoiceNumber(); clone.status = 'draft';
+      state.invoices.push(clone); saveState(); renderTable();
+    });
+    $('#deleteInvoiceBtn').addEventListener('click', ()=>{
+      if(!state.editingInvoice) return;
+      state.invoices = state.invoices.filter(i=>i.id !== state.editingInvoice.id);
+      saveState(); renderTable(); closeInvoiceForm();
+    });
 
-        // Calculate invoice
-        function calculateInvoice() {
-            let subtotal = 0;
-            document.querySelectorAll('#lineItems > div').forEach(item => {
-                const qty = parseFloat(item.querySelector('.item-qty').value) || 0;
-                const rate = parseFloat(item.querySelector('.item-rate').value) || 0;
-                const total = qty * rate;
-                item.querySelector('.item-total').textContent = `${total.toFixed(2)}`;
-                subtotal += total;
-            });
-            
-            const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
-            const discountRate = parseFloat(document.getElementById('discountRate').value) || 0;
-            const shipping = parseFloat(document.getElementById('shipping').value) || 0;
-            
-            const discount = subtotal * (discountRate / 100);
-            const subtotalAfterDiscount = subtotal - discount;
-            const tax = subtotalAfterDiscount * (taxRate / 100);
-            const total = subtotalAfterDiscount + tax + shipping;
-            
-            updatePreview();
-        }
+    // table actions (edit/pdf/send)
+    invoiceTableBody.addEventListener('click', (e)=>{
+      const el = e.target;
+      if(el.matches('.edit')) {
+        const id = el.dataset.id;
+        const inv = state.invoices.find(i=>i.id===id);
+        if(inv) openInvoiceForm(JSON.parse(JSON.stringify(inv))); // edit copy
+      } else if(el.matches('.send')){
+        const id = el.dataset.id;
+        const inv = state.invoices.find(i=>i.id===id);
+        if(inv){ inv.status='sent'; saveState(); renderTable(); alert('Marked as Sent'); }
+      } else if(el.matches('.pdf')){
+        const id = el.dataset.id;
+        const inv = state.invoices.find(i=>i.id===id);
+        if(inv) downloadInvoicePDF(inv);
+      }
+    });
 
-        // Update preview
-        function updatePreview() {
-            const businessName = document.getElementById('businessName').value || 'Your Business';
-            const businessEmail = document.getElementById('businessEmail').value || 'your@email.com';
-            const businessAddress = document.getElementById('businessAddress').value || 'Your Address';
-            const clientName = document.getElementById('clientName').value || 'Client Name';
-            const clientEmail = document.getElementById('clientEmail').value || 'client@email.com';
-            const clientAddress = document.getElementById('clientAddress').value || 'Client Address';
-            const invoiceDate = document.getElementById('invoiceDate').value || new Date().toISOString().split('T')[0];
-            const dueDate = document.getElementById('dueDate').value || '';
-            const crypto = document.getElementById('crypto').value;
-            const notes = document.getElementById('invoiceNotes').value;
-            
-            let subtotal = 0;
-            let itemsHTML = '';
-            const textColor = currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-900
+    // export CSV
+    $('#btnExportCSV').addEventListener('click', ()=>{
+      const rows = [['Invoice#','Client','Date','Due','Subtotal','Tax','Discount','Total','Status','Notes']];
+      for (const inv of state.invoices){
+        const c = calcInvoice(inv);
+        rows.push([inv.number, getClient(inv.clientId)?.name||'', inv.date||'', inv.dueDate||'', c.subtotal, c.tax, c.discount, c.total, inv.status, (inv.notes||'').replace(/\n/g,' ')]);
+      }
+      const csv = rows.map(r => r.map(cell => `"${String(cell||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='invoices.csv'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // PDF: generate a simple invoice HTML and use html2pdf
+    function downloadInvoicePDF(inv){
+      const client = getClient(inv.clientId) || {name:'Unknown', address:''};
+      const calc = calcInvoice(inv);
+      const el = document.createElement('div');
+      el.style.padding='20px'; el.style.fontFamily='Inter,Arial,Helvetica';
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><h2>Invoice</h2><div>${client.name}</div><div style="margin-top:8px">${client.address||''}</div></div>
+          <div style="text-align:right"><div><strong>${inv.number}</strong></div><div>Date: ${inv.date}</div><div>Due: ${inv.dueDate||'—'}</div></div>
+        </div>
+        <hr style="margin:12px 0"/>
+        <div>
+          ${inv.lines.map(l=>`<div style="display:flex;justify-content:space-between;margin:6px 0"><div>${escapeHtml(l.desc)}</div><div>${l.qty} x ${l.rate} = ₹ ${round2((Number(l.qty)||0)*(Number(l.rate)||0))}</div></div>`).join('')}
+        </div>
+        <hr/>
+        <div style="display:flex;flex-direction:column;align-items:flex-end">
+          <div>Subtotal: ₹ ${calc.subtotal}</div>
+          <div>Tax: ₹ ${calc.tax}</div>
+          <div>Discount: -₹ ${calc.discount}</div>
+          <div style="font-weight:700;font-size:18px;margin-top:6px">Total: ₹ ${calc.total}</div>
+        </div>
+        <div style="margin-top:16px">${escapeHtml(inv.notes||'')}</div>
+      `;
+      const opt = { margin:10, filename: `${inv.number}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
+      html2pdf().set(opt).from(el).save();
+    }
+
+    // download current preview invoice
+    $('#downloadPDF').addEventListener('click', ()=>{
+      if(!state.editingInvoice) return alert('Open an invoice to download');
+      downloadInvoicePDF(state.editingInvoice);
+    });
+
+    // preview print (open small printable view)
+    $('#previewPrint').addEventListener('click', ()=>{
+      if(!state.editingInvoice) return alert('Open an invoice to preview');
+      const inv = state.editingInvoice;
+      const calc = calcInvoice(inv);
+      const w = window.open('','_blank','width=800,height=800');
+      const html = `
+        <html><head><title>${inv.number}</title><style>body{font-family:Inter,Arial;padding:20px;color:#111} .big{font-weight:700}</style></head>
+        <body>
+          <h2>Invoice ${inv.number}</h2>
+          <div>Client: ${escapeHtml(getClient(inv.clientId)?.name || '—')}</div>
+          <div style="margin-top:10px">
+            ${inv.lines.map(l=>`<div>${escapeHtml(l.desc)} - ${l.qty} x ${l.rate} = ₹ ${round2((Number(l.qty)||0)*(Number(l.rate)||0))}</div>`).join('')}
+          </div>
+          <div style="margin-top:10px" class="big">Total: ₹ ${calc.total}</div>
+          <div style="margin-top:20px">${escapeHtml(inv.notes||'')}</div>
+        </body></html>
+      `;
+      w.document.write(html); w.document.close();
+    });
+
+    // ---------- Crypto prices ----------
+    async function fetchPrices(){
+      try {
+        // CoinGecko public API - no key required
+        const ids = ['bitcoin','ethereum','tether','solana'];
+        const resp = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + ids.join(',') + '&vs_currencies=usd');
+        const data = await resp.json();
+        state.prices = data;
+        renderPrices();
+      } catch(err){
+        console.error('Price fetch failed',err);
+        $('#priceList').textContent = 'Price fetch failed';
+      }
+    }
+    function renderPrices(){
+      const p = state.prices;
+      const parts = [];
+      if(p.bitcoin) parts.push('BTC $' + p.bitcoin.usd);
+      if(p.ethereum) parts.push('ETH $' + p.ethereum.usd);
+      if(p.tether) parts.push('USDT $' + p.tether.usd);
+      if(p.solana) parts.push('SOL $' + p.solana.usd);
+      $('#priceList').textContent = parts.join(' • ');
+      updateCryptoConverted();
+    }
+    $('#btnRefreshPrices').addEventListener('click', ()=> fetchPrices());
+
+    // convert preview total to selected crypto
+    function updateCryptoConverted(){
+      const inv = state.editingInvoice;
+      if(!inv) { $('#cryptoConverted').textContent='—'; return; }
+      const sel = $('#cryptoSelect').value;
+      const calc = calcInvoice(inv);
+      if(!sel || !state.prices || !state.prices[sel]) {
+        $('#cryptoConverted').textContent = '—';
+        return;
+      }
+      const usd = calc.total * 0.012; // placeholder rupee -> usd? We should assume INR to USD conversion unknown. We'll do a basic approximate: 1 USD = 83 INR
+      // Better: treat totals as INR and convert to USD via a conservative rate.
+      const inrToUsd = 1/83; // approx; you can replace with live FX if desired
+      const usdTotal = calc.total * inrToUsd;
+      const priceUsd = state.prices[sel].usd;
+      const amountCrypto = round2(usdTotal / priceUsd);
+      $('#cryptoConverted').textContent = `${amountCrypto} ${sel.toUpperCase()} ≈ $${round2(usdTotal)} (est)`;
+    }
+
+    // QR code
+    let qrcodeInstance = null;
+    $('#genQR').addEventListener('click', ()=>{
+      const value = $('#cryptoAddress').value.trim();
+      if(!value) return alert('Paste a crypto address or payment URI first');
+      const qEl = document.getElementById('qrcode'); qEl.innerHTML='';
+      qrcodeInstance = new QRCode(qEl, { text: value, width:120, height:120 });
+    });
+
+    // when crypto select changes, update conversion
+    $('#cryptoSelect').addEventListener('change', updateCryptoConverted);
+
+    // ---------- utilities ----------
+    function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    // ---------- setup initial event wiring ----------
+    $('#filterStatus').addEventListener('change', renderTable);
+    $('#sortSelect').addEventListener('change', renderTable);
+    $('#searchInput').addEventListener('input', renderTable);
+    $('#templateSelect').addEventListener('change', (e)=>{ state.template = e.target.value; });
+    $('#themeSelect').addEventListener('change', (e)=>{ state.theme = e.target.value; document.getElementById('app').setAttribute('data-theme', state.theme); });
+    $('#invoice_client').addEventListener('change', ()=>{ state.editingInvoice.clientId = $('#invoice_client').value; renderPreview(); });
+    $('#invoice_number').addEventListener('input', ()=>{ state.editingInvoice.number = $('#invoice_number').value; renderPreview(); });
+    $('#invoice_date').addEventListener('change', ()=>{ state.editingInvoice.date = $('#invoice_date').value; renderPreview(); });
+    $('#invoice_due').addEventListener('change', ()=>{ state.editingInvoice.dueDate = $('#invoice_due').value; renderPreview(); });
+    $('#invoice_tax').addEventListener('input', ()=>{ state.editingInvoice.tax = Number($('#invoice_tax').value)||0; renderPreview(); });
+    $('#invoice_discount').addEventListener('input', ()=>{ state.editingInvoice.discount = Number($('#invoice_discount').value)||0; renderPreview(); });
+    $('#invoice_notes').addEventListener('input', ()=>{ state.editingInvoice.notes = $('#invoice_notes').value; renderPreview(); });
+    $('#cryptoAddress').addEventListener('input', ()=>{ state.editingInvoice.crypto = $('#cryptoAddress').value; });
+
+    // ---------- initial load ----------
+    function init(){
+      refreshClientOptions();
+      renderTable();
+      fetchPrices();
+      // initial theme
+      document.getElementById('app').setAttribute('data-theme', state.theme);
+      $('#themeSelect').value = state.theme;
+      // populate with demo if empty
+      if(state.clients.length===0 && state.invoices.length===0){
+        state.clients.push({id:uid('CL'), name:'Acme Ltd', contact:'Alice', email:'alice@acme.com', phone:'', address:'123, Market St\nMumbai', tax:'GSTIN123'});
+        state.clients.push({id:uid('CL'), name:'Beta Co', contact:'Ravi', email:'ravi@beta.com', phone:'', address:'45, MG Road\nPune', tax:''});
+        const demo = defaultInvoice();
+        demo.clientId = state.clients[0].id;
+        demo.lines = [{desc:'Website design', qty:1, rate:20000},{desc:'Hosting (1 yr)', qty:1, rate:2000}];
+        demo.tax = 18; demo.discount=0; demo.notes='Thank you for your business'; demo.status='sent';
+        state.invoices.push(demo);
+        saveState();
+      }
+      refreshClientOptions();
+      renderTable();
+    }
+    init();
+
+    // expose small functions for debugging in console
+    window.InvoiceGen = { state, saveState, fetchPrices };
+  })();
+  </script>
+</body>
+</html>
